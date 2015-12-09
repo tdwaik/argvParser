@@ -1,7 +1,7 @@
 <?php
 /**
- * @author Thaer AlDwaik <taldwaik@souq.com>
- * @date December 9, 2015
+ * @author Thaer AlDwaik <t_dwaik@hotmail.com>
+ * @since December 9, 2015
  *
  */
 
