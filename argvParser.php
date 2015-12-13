@@ -23,92 +23,88 @@ class ArgvParser {
         $argCount = count($argv);
         $parsedArgv = array();
 
-        for($i = 0; $i < $argCount; $i++) {
+        // file name
+        if(!$skipFileName) {
+            $parsedArgv['fileName'] = $argv[0];
+        }
 
-            // file name
-            if($i == 0) {
-                if($skipFileName) {
-                    continue;
+        for($i = 1; $i < $argCount; $i++) {
+
+            $arg = $argv[$i];
+            $nextArg = ($i < $argCount - 1)? $argv[$i + 1] : null;
+
+            // long character `--`
+            if(preg_match('/^--\w+/', $arg)) {
+
+                // --key=value
+                if(strpos($arg, '=') > 0) {
+                    $exp = explode('=', $arg);
+                    $key = str_replace('--', '', $exp[0]);
+                    $parsedArgv[$key] = $exp[1];
                 }
-                $parsedArgv['fileName'] = $argv[$i];
 
-            }else {
-                $arg = $argv[$i];
-                $nextArg = ($i < $argCount - 1)? $argv[$i + 1] : null;
+                // --key
+                elseif($nextArg === null || preg_match('/^-+\w+/', $nextArg)) {
+                    $key = str_replace('--', '', $arg);
+                    $parsedArgv[$key] = true;
 
-                // long character `--`
-                if(preg_match('/^--\w+/', $arg)) {
+                }
 
-                    // --key=value
-                    if(strpos($arg, '=') > 0) {
-                        $exp = explode('=', $arg);
-                        $key = str_replace('--', '', $exp[0]);
-                        $parsedArgv[$key] = $exp[1];
+                // --key value
+                else {
+                    $key = str_replace('--', '', $arg);
+                    $parsedArgv[$key] = $nextArg;
+                    $i++;
+                }
+
+            }
+
+            // single character `-`
+            elseif(preg_match('/^-\w+$/', $arg)) {
+
+                $arg = str_replace('-', '', $arg);
+
+                // -k, -kvalue
+                if($nextArg === null || preg_match('/^-+\w+/', $nextArg)) {
+
+                    // -k
+                    if(preg_match('/^\w$/', $arg)) {
+                        $parsedArgv[$arg] = true;
                     }
 
-                    // --key
-                    elseif($nextArg === null || preg_match('/^-+\w+/', $nextArg)) {
-                        $key = str_replace('--', '', $arg);
-                        $parsedArgv[$key] = true;
-
-                    }
-
-                    // --key value
+                    // -kvalue
                     else {
-                        $key = str_replace('--', '', $arg);
-                        $parsedArgv[$key] = $nextArg;
+                        $key = substr($arg, 0, 1);
+                        $value = substr($arg, 1);
+                        $parsedArgv[$key] = $value;
+                    }
+                }
+
+                // -k value, -abc cvalue
+                else {
+
+                    // -k value
+                    if(preg_match('/^\w$/', $arg)) {
+                        $parsedArgv[$arg] = $nextArg;
                         $i++;
                     }
 
-                }
+                    // -abc cvalue
+                    elseif(preg_match('/^\w+$/', $arg)) {
+                        $keys = str_split($arg);
+                        $keysCount = count($keys);
 
-                // single character `-`
-                elseif(preg_match('/^-\w+$/', $arg)) {
-
-                    $arg = str_replace('-', '', $arg);
-
-                    // -k, -kvalue
-                    if($nextArg === null || preg_match('/^-+\w+/', $nextArg)) {
-
-                        // -k
-                        if(preg_match('/^\w$/', $arg)) {
-                            $parsedArgv[$arg] = true;
-                        }
-
-                        // -kvalue
-                        else {
-                            $key = substr($arg, 0, 1);
-                            $value = substr($arg, 1);
-                            $parsedArgv[$key] = $value;
-                        }
-                    }
-
-                    // -k value, -abc cvalue
-                    else {
-
-                        // -k value
-                        if(preg_match('/^\w$/', $arg)) {
-                            $parsedArgv[$arg] = $nextArg;
-                            $i++;
-                        }
-
-                        // -abc cvalue
-                        elseif(preg_match('/^\w+$/', $arg)) {
-                            $keys = str_split($arg);
-                            $keysCount = count($keys);
-
-                            for($k = 0; $k < $keysCount; $k++) {
-                                if($k == $keysCount - 1) {
-                                    $parsedArgv[$keys[$k]] = $nextArg;
-                                }else {
-                                    $parsedArgv[$keys[$k]] = true;
-                                }
+                        for($k = 0; $k < $keysCount; $k++) {
+                            if($k == $keysCount - 1) {
+                                $parsedArgv[$keys[$k]] = $nextArg;
+                            }else {
+                                $parsedArgv[$keys[$k]] = true;
                             }
-                            $i++;
                         }
+                        $i++;
                     }
-
                 }
+
             }
 
         }
